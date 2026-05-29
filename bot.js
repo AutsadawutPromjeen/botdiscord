@@ -33,7 +33,7 @@ const gameData = {
         label: 'Valorant',
         description: '',
         emoji: '1509921504152916068',
-        roleId: 'ROLE_ID_VALORANT',
+        roleId: '1510011363362214098',
         ranks: [
             { label: 'Platinum', value: 'rank_val_plat', roleId: '1509960992094949396', emoji: '💠' },
             { label: 'Diamond', value: 'rank_val_dia', roleId: '1509963430801703043', emoji: '💎' },
@@ -46,7 +46,7 @@ const gameData = {
         label: 'RoV',
         description: '',
         emoji: '1509921978600132638',
-        roleId: 'ROLE_ID_ROV',
+        roleId: '1510011420484440276',
         ranks: [
             { label: 'Diamond', value: 'rank_rov_dia', roleId: '1509965084284162139', emoji: '💎' },
             { label: 'Commander', value: 'rank_rov_commander', roleId: '1509965167172128971', emoji: '👑' },
@@ -59,7 +59,7 @@ const gameData = {
         label: 'Mobile Legends (MLBB)',
         description: '',
         emoji: '1509921694993612902',
-        roleId: 'ROLE_ID_MLBB',
+        roleId: '1510011480488149032',
         ranks: [
             { label: 'Epic', value: 'rank_ml_epic', roleId: '1509966317904466023', emoji: '🟢' },
             { label: 'Legend', value: 'rank_ml_legend', roleId: '1509966388683477202', emoji: '🔮' },
@@ -70,7 +70,7 @@ const gameData = {
         label: 'PUBG',
         description: '',
         emoji: '1509924287291850793',
-        roleId: 'ROLE_ID_PUBG',
+        roleId: '1510011730078597322',
         ranks: [
             { label: 'Diamond', value: 'rank_pubg_dia', roleId: '1509967203808837875', emoji: '💎' },
             { label: 'Crown', value: 'rank_pubg_crown', roleId: '1509967242505490432', emoji: '👑' },
@@ -79,7 +79,7 @@ const gameData = {
         ]
     },
     'freefire': {
-        label: 'Free Fire',
+        label: '1510011792020078703',
         description: '',
         emoji: '1509924266886430872',
         roleId: 'ROLE_ID_FREEFIRE',
