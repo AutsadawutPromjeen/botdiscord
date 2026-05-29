@@ -153,7 +153,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
             if (!channel) return interaction.reply({ content: 'ไม่พบห้องที่ตั้งค่าไว้ กรุณาตรวจสอบ SETUP_CHANNEL_ID ในไฟล์ .env', ephemeral: true });
 
             const embed = new EmbedBuilder()
-                .setColor('#FFA500')
+                .setColor('#01ca33')
+                .setDescription('**เลือกยศ ROV / MLBB / เกมที่คุณเล่น**\n(สามารถกดเลือกได้หลายเกมครับ)')
                 .setImage(BANNER_URL);
 
             const gameSelectMenu = new StringSelectMenuBuilder()
@@ -197,10 +198,10 @@ client.on(Events.InteractionCreate, async (interaction) => {
                 if (role) {
                     if (member.roles.cache.has(role.id)) {
                         await member.roles.remove(role);
-                        responseMessage += `➖ ถอดยศเกม **${gameInfo.label}** ออกแล้ว\n`;
+                        responseMessage += `❌ ถอดยศเกม **${gameInfo.label}** ออกแล้ว\n`;
                     } else {
                         await member.roles.add(role);
-                        responseMessage += `➕ มอบยศเกม **${gameInfo.label}** เรียบร้อยแล้ว\n`;
+                        responseMessage += `✅ มอบยศเกม **${gameInfo.label}** เรียบร้อยแล้ว\n`;
 
                         if (gameInfo.ranks && gameInfo.ranks.length > 0) {
                             const rankMenu = new StringSelectMenuBuilder()
