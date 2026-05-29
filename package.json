@@ -1,0 +1,24 @@
+{
+  "name": "zeross-community-bot",
+  "version": "1.0.0",
+  "description": "Discord Bot for role management with Slash Commands",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js",
+    "dev": "nodemon bot.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "roles",
+    "slash-commands"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "^14.18.0",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2"
+  }
+}
