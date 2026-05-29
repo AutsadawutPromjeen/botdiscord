@@ -79,7 +79,7 @@ const gameData = {
         ]
     },
     'freefire': {
-        label: '1510011792020078703',
+        label: 'FF',
         description: '',
         emoji: '1509924266886430872',
         roleId: 'ROLE_ID_FREEFIRE',
