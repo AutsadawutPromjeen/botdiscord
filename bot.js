@@ -153,7 +153,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
             if (!channel) return interaction.reply({ content: 'ไม่พบห้องที่ตั้งค่าไว้ กรุณาตรวจสอบ SETUP_CHANNEL_ID ในไฟล์ .env', ephemeral: true });
 
             const embed = new EmbedBuilder()
-                .setColor('#01ca33')
+                .setColor('#FFA500')
                 .setDescription('**เลือกยศ ROV / MLBB / เกมที่คุณเล่น**\n(สามารถกดเลือกได้หลายเกมครับ)')
                 .setImage(BANNER_URL);
 
@@ -186,23 +186,42 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     if (interaction.customId === 'select_game') {
         const selectedGames = interaction.values;
-        const member = interaction.member;
+        
+        // 🔄 ดึงข้อมูลผู้ใช้แบบสดๆ (Fresh Fetch) แก้ปัญหาแคชค้างที่ทำให้ได้ยศมั่ว
+        const member = await interaction.guild.members.fetch(interaction.user.id).catch(() => null);
+        if (!member) return interaction.reply({ content: '❌ ไม่สามารถดึงข้อมูลผู้ใช้ได้', ephemeral: true });
 
         let responseMessage = '⚙️ **ระบบจัดการยศอัตโนมัติ:**\n';
         const rankSelectionComponents = [];
+        
+        // กำหนด Array สำหรับรวบยอดอัปเดตยศรวดเดียว (Bulk Update)
+        const rolesToAdd = [];
+        const rolesToRemove = [];
 
         for (const gameKey of selectedGames) {
             const gameInfo = gameData[gameKey];
             if (gameInfo) {
-                const role = interaction.guild.roles.cache.get(gameInfo.roleId);
-                if (role) {
-                    if (member.roles.cache.has(role.id)) {
-                        await member.roles.remove(role);
+                const roleId = gameInfo.roleId;
+                if (roleId) {
+                    if (member.roles.cache.has(roleId)) {
+                        // Toggle Off: ถอดยศเกม
+                        rolesToRemove.push(roleId);
                         responseMessage += `❌ ถอดยศเกม **${gameInfo.label}** ออกแล้ว\n`;
+                        
+                        // กวาดล้าง "ยศแรงค์ทั้งหมด" ที่เกี่ยวกับเกมนี้ออกด้วย เพื่อป้องกันยศแรงค์ค้าง
+                        if (gameInfo.ranks) {
+                            gameInfo.ranks.forEach(rank => {
+                                if (member.roles.cache.has(rank.roleId)) {
+                                    rolesToRemove.push(rank.roleId);
+                                }
+                            });
+                        }
                     } else {
-                        await member.roles.add(role);
+                        // Toggle On: เพิ่มยศเกม
+                        rolesToAdd.push(roleId);
                         responseMessage += `✅ มอบยศเกม **${gameInfo.label}** เรียบร้อยแล้ว\n`;
 
+                        // สร้างกล่องเลือกแรงค์ส่งให้ผู้ใช้
                         if (gameInfo.ranks && gameInfo.ranks.length > 0) {
                             const rankMenu = new StringSelectMenuBuilder()
                                 .setCustomId(`select_rank_${gameKey}`) 
@@ -223,51 +242,83 @@ client.on(Events.InteractionCreate, async (interaction) => {
                         }
                     }
                 } else {
-                    console.error(`ไม่พบ Role ID: ${gameInfo.roleId} สำหรับเกม ${gameInfo.label}`);
+                    console.error(`ไม่พบ Role ID สำหรับเกม ${gameInfo.label}`);
                 }
             }
         }
 
         if (rankSelectionComponents.length > 5) {
             rankSelectionComponents.splice(5);
-            responseMessage += `⚠️ *ระบบแสดงกล่องเลือกแรงค์ได้สูงสุดเพียง 5 เกมแรกเท่านั้น*`;
+            responseMessage += `⚠️ *ระบบแสดงกล่องเลือกแรงค์ได้สูงสุดเพียง 5 เกมแรกเท่านั้น*\n`;
         }
 
-        await interaction.reply({ 
-            content: responseMessage, 
-            components: rankSelectionComponents,
-            ephemeral: true 
-        });
+        try {
+            // อัปเดตยศรวดเดียวพร้อมกันหมด แก้บัคยศซ้อน/เซิร์ฟเวอร์ดิสคอร์ดอัปเดตไม่ทัน
+            if (rolesToRemove.length > 0) await member.roles.remove(rolesToRemove);
+            if (rolesToAdd.length > 0) await member.roles.add(rolesToAdd);
+            
+            await interaction.reply({ 
+                content: responseMessage, 
+                components: rankSelectionComponents,
+                ephemeral: true 
+            });
+        } catch (error) {
+            console.error('Error updating game roles:', error);
+            await interaction.reply({ 
+                content: '❌ เกิดข้อผิดพลาด! บอทอาจไม่มีสิทธิ์ หรือลำดับยศของบอทอยู่ต่ำกว่ายศที่จะแจก', 
+                ephemeral: true 
+            });
+        }
     }
 
     else if (interaction.customId.startsWith('select_rank_')) {
         const gameKey = interaction.customId.replace('select_rank_', ''); 
         const selectedRankValue = interaction.values[0]; 
-        const member = interaction.member;
+        
+        // 🔄 ดึงข้อมูลผู้ใช้แบบสดๆ
+        const member = await interaction.guild.members.fetch(interaction.user.id).catch(() => null);
+        if (!member) return interaction.reply({ content: '❌ ไม่สามารถดึงข้อมูลผู้ใช้ได้', ephemeral: true });
+        
         const gameInfo = gameData[gameKey];
-
         if (!gameInfo) return interaction.reply({ content: '❌ ไม่พบข้อมูลเกมนี้', ephemeral: true });
 
         const rankInfo = gameInfo.ranks.find(r => r.value === selectedRankValue);
         if (!rankInfo) return interaction.reply({ content: '❌ ไม่พบข้อมูลแรงค์นี้', ephemeral: true });
 
-        const newRankRole = interaction.guild.roles.cache.get(rankInfo.roleId);
-        if (!newRankRole) return interaction.reply({ content: '❌ ไม่พบ Role ของแรงค์นี้ในดิสคอร์ด', ephemeral: true });
+        const newRankRoleId = rankInfo.roleId;
+        if (!interaction.guild.roles.cache.get(newRankRoleId)) return interaction.reply({ content: '❌ ไม่พบ Role ของแรงค์นี้ในดิสคอร์ด', ephemeral: true });
 
-        const rankRolesToRemove = gameInfo.ranks.map(r => r.roleId);
-        for (const rId of rankRolesToRemove) {
-             if (member.roles.cache.has(rId) && rId !== newRankRole.id) {
-                 const oldRole = interaction.guild.roles.cache.get(rId);
-                 if (oldRole) await member.roles.remove(oldRole);
-             }
+        const rolesToRemove = [];
+        const rolesToAdd = [newRankRoleId]; // ใส่ยศแรงค์ที่เลือกเข้าไป
+
+        // ตรวจสอบความปลอดภัย: ถ้าผู้ใช้เผลอกดลบยศเกมหลักไประหว่างเลือก ให้ดึงกลับมาเพิ่มให้ด้วย
+        if (gameInfo.roleId && !member.roles.cache.has(gameInfo.roleId)) {
+            rolesToAdd.push(gameInfo.roleId);
         }
 
-        await member.roles.add(newRankRole);
-
-        await interaction.update({ 
-            content: `✅ อัปเดตข้อมูลเสร็จสิ้น!\nคุณได้รับยศแรงค์ **${rankInfo.emoji} ${rankInfo.label}** สำหรับเกม **${gameInfo.label}** เรียบร้อยแล้ว`, 
-            components: [] 
+        // ค้นหาและเตรียม "ลบแรงค์เก่าทั้งหมด" ของเกมนี้ออก เพื่อป้องกันแรงค์ซ้อนทับกัน
+        gameInfo.ranks.forEach(r => {
+            if (r.roleId !== newRankRoleId && member.roles.cache.has(r.roleId)) {
+                 rolesToRemove.push(r.roleId);
+            }
         });
+
+        try {
+            // ถอดยศแรงค์เก่าออกทั้งหมด แล้วใส่ยศใหม่ในพริบตาเดียว
+            if (rolesToRemove.length > 0) await member.roles.remove(rolesToRemove);
+            await member.roles.add(rolesToAdd);
+            
+            await interaction.update({ 
+                content: `✅ อัปเดตข้อมูลเสร็จสิ้น!\nคุณได้รับยศแรงค์ **${rankInfo.emoji} ${rankInfo.label}** สำหรับเกม **${gameInfo.label}** เรียบร้อยแล้ว`, 
+                components: [] 
+            });
+        } catch (error) {
+            console.error('Error updating rank roles:', error);
+            await interaction.update({ 
+                content: '❌ เกิดข้อผิดพลาดในการรับยศ! กรุณาตรวจสอบลำดับยศบอทว่าอยู่สูงสุดแล้วหรือยัง', 
+                components: [] 
+            });
+        }
     }
 });
 
