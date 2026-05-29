@@ -125,7 +125,14 @@ const client = new Client({
 const commands = [
     new SlashCommandBuilder()
         .setName('setup-roles')
-        .setDescription('สร้างข้อความรับยศอัตโนมัติ')
+        .setDescription('สร้างข้อความรับยศอัตโนมัติ'),
+    new SlashCommandBuilder()
+        .setName('say')
+        .setDescription('ให้บอทพูดข้อความที่คุณต้องการ')
+        .addStringOption(option => 
+            option.setName('message')
+                .setDescription('ข้อความที่ต้องการให้บอทพิมพ์')
+                .setRequired(true))
 ].map(command => command.toJSON());
 
 const rest = new REST({ version: '10' }).setToken(TOKEN);
@@ -177,6 +184,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
             await channel.send({ embeds: [embed], components: [row] });
             await interaction.reply({ content: `✅ สร้างข้อความรับยศเรียบร้อยแล้วที่ห้อง <#${SETUP_CHANNEL_ID}>`, ephemeral: true });
+        }
+        
+        // 💬 ระบบใหม่: สั่งให้บอทพิมพ์ข้อความตามใจเรา
+        if (interaction.commandName === 'say') {
+            const messageToSay = interaction.options.getString('message');
+            await interaction.channel.send(messageToSay); // ให้บอทส่งข้อความนั้นลงในห้อง
+            await interaction.reply({ content: '✅ บอทส่งข้อความให้เรียบร้อยแล้ว!', ephemeral: true }); // แจ้งเตือนแอดมินแบบส่วนตัว
         }
         return;
     }
